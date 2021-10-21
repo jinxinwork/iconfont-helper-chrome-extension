@@ -27,7 +27,7 @@ const mask = $('#__dawangraoming_mask__');
  * @param [type] {string} 下载类型，支持png、GIF、
  * @return {Promise<string>} 返回一个Promise
  */
-function createPNG(svg: string, size = 200, type?: string): Promise<string> {
+function createPNG(svg: string, size = 200, type?: string,color?:string): Promise<string> {
     return new Promise(resolve => {
         const img = new Image();
         const canvas = document.createElement('canvas');
@@ -60,6 +60,9 @@ function createPNG(svg: string, size = 200, type?: string): Promise<string> {
         // 图片加载完毕后
         img.onload = function () {
             ctx.drawImage(img, 0, 0, size, size);
+            ctx.fillStyle= color;
+            ctx.globalCompositeOperation="source-in";
+            ctx.fillRect(0,0,size,size)
             resolve(canvas.toDataURL(compileType));
             $(canvas).remove();
             $(img).remove();
@@ -92,7 +95,7 @@ function getSVGFromNode(element: Element | JQuery, index = 0): { data: string, n
  * @param [size] {number} 图像尺寸
  * @return {Promise<void>}
  */
-async function download(type?: IconFontHelper.imgType, size?: number): Promise<void> {
+async function download(type?: IconFontHelper.imgType, size?: number,color?:'#000000'): Promise<void> {
     // 获取所有购物车内的元素
     const iconList = document.querySelectorAll(".block-car-container .block-icon-list>li");
     if (!iconList || iconList.length < 1) return;
@@ -110,7 +113,7 @@ async function download(type?: IconFontHelper.imgType, size?: number): Promise<v
             zipFile.file(name, data);
         } else {
             name += '.' + type;
-            let pngFile = await createPNG(data, size, type);
+            let pngFile = await createPNG(data, size, type,color);
             pngFile = pngFile.replace(/^data:image\/\w+;base64,/, '');
             zipFile.file(name, pngFile, {base64: true});
         }
@@ -178,11 +181,11 @@ chrome.runtime.onMessage.addListener(function (request: IconFontHelper.MessageTy
             break;
 
         case 'download-png':
-            download('png', request.size);
+            download('png', request.size,request.color);
             break;
 
         case 'download-jpg':
-            download('jpg', request.size);
+            download('jpg', request.size,request.color);
             break;
 
         case 'download-webp':
